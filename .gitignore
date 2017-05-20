@@ -1,2 +1,7 @@
 .git
 build
+.idea
+.vscode
+.DS_Store
+cmake-build-debug
+cmake-build-release

@@ -5,7 +5,7 @@
 #include "information.h"
 #include "decision.h"
 
-#include <opencv2\core.hpp>
+#include <opencv2/core.hpp>
 
 class Agent
 {

@@ -7,12 +7,13 @@
 
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
+#include <opencv2/core.hpp>
 
 #include "agent.h"
 
 class World
 {
-private:
+  private:
 	std::mt19937 RNG;
 	std::uniform_int_distribution<int> m_distribX, m_distribY;
 
@@ -23,18 +24,14 @@ private:
 
 	cv::Mat m_attractivityMap;
 
-
 	void createAgent();
 	void updateAttractivityMap();
 	Information createInformation(size_t agentIndex);
 
-
-
-public:
+  public:
 	World();
 	~World();
 
 	void update();
 	void showWorldState();
 };
-
