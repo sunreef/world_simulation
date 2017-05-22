@@ -37,7 +37,7 @@ Information World::createInformation(size_t agentIndex)
 World::World()
 {
 	RNG = std::mt19937(std::random_device()());
-	m_attractivityMap = cv::Mat(400, 400, CV_64FC1);
+	m_attractivityMap = cv::Mat(250, 400, CV_64FC1);
 
 	m_distribX = std::uniform_int_distribution<int>(0, m_attractivityMap.cols - 1);
 	m_distribY = std::uniform_int_distribution<int>(0, m_attractivityMap.rows - 1);
@@ -68,5 +68,5 @@ void World::update()
 void World::showWorldState()
 {
 	cv::imshow("Attractivity Map", m_attractivityMap);
-	cv::waitKey(100);
+	cv::waitKey(50);
 }
