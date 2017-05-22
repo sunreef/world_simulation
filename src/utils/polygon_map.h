@@ -32,7 +32,7 @@ private:
 
 	std::vector<Coord> m_vertices;
 	std::vector<Face> m_faces;
-	std::vector<std::vector<int>> m_splitGraph;
+	std::vector<std::vector<int> > m_splitGraph;
 	std::vector<int> m_graphParent;
 
 	bool isPointInside(const Coord& c, const Face& f);

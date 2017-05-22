@@ -24,6 +24,8 @@ bool PolygonMap::isPointInCircle(const Coord & d, const Face & f)
 	Coord b = m_vertices[f.v[1]];
 	Coord c = m_vertices[f.v[2]];
 
+    std::cout << a.first << " " << a.second << std::endl;
+	std::cout << d.first << " " << d.second << std::endl;
 	double determinant = 0;
 	for (int i = 0; i < 3; i++) {
 		determinant += (m_vertices[f.v[i]].first - d.first)
@@ -47,7 +49,14 @@ void PolygonMap::splitFace(int f, int v)
 		int vertices[3] = { face.v[i], face.v[(i + 1) % 3], v };
 		int faces[3] = { face.f[i], index + ((i + 1) % 3), index + ((i + 2) % 3) };
 		m_faces.push_back(Face(vertices, faces));
+		if(face.f[i] >= 0) {
+			for(int j = 0; j < 3; j++) {
+				if(m_faces[face.f[i]].f[j] == f) {
+					m_faces[face.f[i]].f[j] = index + i;
+				}
+			}
 
+		}
 		m_splitGraph[f].push_back(index + i);
 		m_splitGraph.push_back(std::vector<int>());
 		m_graphParent.push_back(f);
@@ -58,45 +67,50 @@ bool PolygonMap::flipEdge(int f1, int f2)
 {
 	Face face1 = m_faces[f1];
 	Face face2 = m_faces[f2];
-	int f1_f, f2_f;
+	int id_f1, id_f2;
 
 	for (int i = 0; i < 3; i++) {
 		if (face1.f[i] == f2) {
-			f1_f = i;
+			id_f1 = i;
 		}
 		if (face2.f[i] == f1) {
-			f2_f = i;
+			id_f2 = i;
 		}
 	}
 
-	if (!isPointInCircle(m_vertices[face2.v[(f2_f + 2) % 3]], face1)) {
+	if (!isPointInCircle(m_vertices[face2.v[(id_f2 + 2) % 3]], face1)) {
 		return false;
 	}
-	std::cout << "Flipping edge" << std::endl;
 
-	m_faces[f1].v[(f1_f + 1) % 3] = face2.v[(f2_f + 2) % 3];
-	m_faces[f2].v[(f2_f + 1) % 3] = face1.v[(f1_f + 2) % 3];
+	m_faces[f1].v[(id_f1 + 1) % 3] = face2.v[(id_f2 + 2) % 3];
+	m_faces[f2].v[(id_f2 + 1) % 3] = face1.v[(id_f1 + 2) % 3];
 
-	m_faces[f1].f[f1_f] = face2.f[(f2_f + 1) % 3];
-	int temp = face1.f[(f1_f + 1) % 3];
-	m_faces[f1].f[(f1_f + 1) % 3] = f2;
+	int neighbour1 = face2.f[(id_f2 + 1) % 3];
+	m_faces[f1].f[id_f1] = neighbour1;
+	if(neighbour1 >= 0) {
+		for(int i = 0; i < 3; i++) {
+			if(m_faces[neighbour1].f[i] == f2) {
+				m_faces[neighbour1].f[i] = f1;
+			}
+		}
+	}
 
-	m_faces[f2].f[f2_f] = temp;
-	m_faces[f2].f[(f2_f + 1) % 3] = f1;
+	int neighbour2 = face1.f[(id_f1 + 1) % 3];
+	m_faces[f1].f[(id_f1 + 1) % 3] = f2;
+	m_faces[f2].f[id_f2] = neighbour2;
+    if(neighbour2 >= 0) {
+		for(int i = 0; i < 3; i++) {
+			if(m_faces[neighbour2].f[i] == f1) {
+				m_faces[neighbour2].f[i] = f2;
+			}
+		}
+
+	}
+	m_faces[f2].f[(id_f2 + 1) % 3] = f1;
 
 	for (int i = 0; i < 3; i++) {
 		std::cout << m_faces[f1].v[i] << " " << m_faces[f2].v[i] << std::endl;
 	}
-
-
-	//int vertices1[3] = { face1.v[f1_f], face2.v[(f2_f + 2) % 3], face1.v[(f1_f + 2) % 3] };
-	//int vertices2[3] = { face2.v[f2_f], face1.v[(f1_f + 2) % 3], face2.v[(f2_f + 2) % 3] };
-
-	//int faces1[3] = { face2.f[(f2_f + 1) % 3], f2, face1.f[(f1_f + 2) % 3] };
-	//int faces2[3] = { face1.f[(f1_f + 1) % 3], f1, face2.f[(f2_f + 2) % 3] };
-
-	//m_faces[f1] = Face(vertices1, faces1);
-	//m_faces[f2] = Face(vertices2, faces2);
 
 	m_splitGraph[m_graphParent[f1]].push_back(f2);
 	m_splitGraph[m_graphParent[f2]].push_back(f1);
@@ -106,6 +120,7 @@ bool PolygonMap::flipEdge(int f1, int f2)
 
 void PolygonMap::insertVertex(Coord & c)
 {
+	std::cout << "insert new vertex" << std::endl;
 	m_vertices.push_back(c);
 	int currentTriangle = 0;
 	for (int t = 0; t < m_faces.size(); t++) {
@@ -122,7 +137,7 @@ void PolygonMap::insertVertex(Coord & c)
 	}
 	splitFace(currentTriangle, m_vertices.size() - 1);
 
-	std::queue<std::pair<int, int>> toDo;
+	std::queue<std::pair<int, int> > toDo;
 	for (int i = 0; i < 3; i++) {
 		Face face1 = m_faces[m_faces[currentTriangle].f[i]];
 		Face face2 = m_faces[m_faces.size() - 3 + i];
@@ -148,7 +163,8 @@ void PolygonMap::insertVertex(Coord & c)
 void PolygonMap::createVertices(int number_of_vertices)
 {
 	for (int i = 0; i < number_of_vertices; i++) {
-		insertVertex(Coord(m_distX(RNG), m_distY(RNG)));
+		Coord new_vertex = Coord(m_distX(RNG), m_distY(RNG));
+		insertVertex(new_vertex);
 	}
 }
 
@@ -177,7 +193,7 @@ PolygonMap::PolygonMap(int width, int height)
 	m_splitGraph.push_back(std::vector<int>());
 	m_graphParent.push_back(-1);
 
-	createVertices(3);
+	createVertices(10);
 }
 
 PolygonMap::~PolygonMap()
