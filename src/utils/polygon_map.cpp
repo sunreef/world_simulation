@@ -24,21 +24,19 @@ bool PolygonMap::isPointInCircle(const Coord & d, const Face & f)
 	Coord b = m_vertices[f.v[1]];
 	Coord c = m_vertices[f.v[2]];
 
-    std::cout << a.first << " " << a.second << std::endl;
+	std::cout << a.first << " " << a.second << std::endl;
 	std::cout << d.first << " " << d.second << std::endl;
 	double determinant = 0;
-	for (int i = 0; i < 3; i++) {
-		determinant += (m_vertices[f.v[i]].first - d.first)
-			* (m_vertices[f.v[(i + 1) % 3]].second - d.second)
-			* (std::pow(m_vertices[f.v[(i + 2) % 3]].first, 2) - std::pow(d.first, 2) + std::pow(m_vertices[f.v[(i + 2) % 3]].second, 2) - std::pow(d.second, 2));
 
-		determinant -= (m_vertices[f.v[i]].first - d.first)
-			* (m_vertices[f.v[(i - 1) % 3]].second - d.second)
-			* (std::pow(m_vertices[f.v[(i - 2) % 3]].first, 2) - std::pow(d.first, 2) + std::pow(m_vertices[f.v[(i - 2) % 3]].second, 2) - std::pow(d.second, 2));
-		std::cout << determinant << std::endl;
-	}
+	determinant += (a.first - d.first) * (b.second - d.second) * (std::pow(c.first, 2) - std::pow(d.first, 2) + std::pow(c.second, 2) - std::pow(d.second, 2));
+	determinant += (b.first - d.first) * (c.second - d.second) * (std::pow(a.first, 2) - std::pow(d.first, 2) + std::pow(a.second, 2) - std::pow(d.second, 2));
+	determinant += (c.first - d.first) * (a.second - d.second) * (std::pow(b.first, 2) - std::pow(d.first, 2) + std::pow(b.second, 2) - std::pow(d.second, 2));
 
-	return determinant > 0;
+	determinant -= (a.first - d.first) * (c.second - d.second) * (std::pow(b.first, 2) - std::pow(d.first, 2) + std::pow(b.second, 2) - std::pow(d.second, 2));
+	determinant += (b.first - d.first) * (a.second - d.second) * (std::pow(c.first, 2) - std::pow(d.first, 2) + std::pow(c.second, 2) - std::pow(d.second, 2));
+	determinant += (c.first - d.first) * (b.second - d.second) * (std::pow(a.first, 2) - std::pow(d.first, 2) + std::pow(a.second, 2) - std::pow(d.second, 2));
+
+	return determinant < 0;
 }
 
 void PolygonMap::splitFace(int f, int v)
@@ -49,9 +47,9 @@ void PolygonMap::splitFace(int f, int v)
 		int vertices[3] = { face.v[i], face.v[(i + 1) % 3], v };
 		int faces[3] = { face.f[i], index + ((i + 1) % 3), index + ((i + 2) % 3) };
 		m_faces.push_back(Face(vertices, faces));
-		if(face.f[i] >= 0) {
-			for(int j = 0; j < 3; j++) {
-				if(m_faces[face.f[i]].f[j] == f) {
+		if (face.f[i] >= 0) {
+			for (int j = 0; j < 3; j++) {
+				if (m_faces[face.f[i]].f[j] == f) {
 					m_faces[face.f[i]].f[j] = index + i;
 				}
 			}
@@ -67,7 +65,8 @@ bool PolygonMap::flipEdge(int f1, int f2)
 {
 	Face face1 = m_faces[f1];
 	Face face2 = m_faces[f2];
-	int id_f1, id_f2;
+	int id_f1 = -1;
+	int id_f2 = -1;
 
 	for (int i = 0; i < 3; i++) {
 		if (face1.f[i] == f2) {
@@ -87,9 +86,9 @@ bool PolygonMap::flipEdge(int f1, int f2)
 
 	int neighbour1 = face2.f[(id_f2 + 1) % 3];
 	m_faces[f1].f[id_f1] = neighbour1;
-	if(neighbour1 >= 0) {
-		for(int i = 0; i < 3; i++) {
-			if(m_faces[neighbour1].f[i] == f2) {
+	if (neighbour1 >= 0) {
+		for (int i = 0; i < 3; i++) {
+			if (m_faces[neighbour1].f[i] == f2) {
 				m_faces[neighbour1].f[i] = f1;
 			}
 		}
@@ -98,19 +97,15 @@ bool PolygonMap::flipEdge(int f1, int f2)
 	int neighbour2 = face1.f[(id_f1 + 1) % 3];
 	m_faces[f1].f[(id_f1 + 1) % 3] = f2;
 	m_faces[f2].f[id_f2] = neighbour2;
-    if(neighbour2 >= 0) {
-		for(int i = 0; i < 3; i++) {
-			if(m_faces[neighbour2].f[i] == f1) {
+	if (neighbour2 >= 0) {
+		for (int i = 0; i < 3; i++) {
+			if (m_faces[neighbour2].f[i] == f1) {
 				m_faces[neighbour2].f[i] = f2;
 			}
 		}
 
 	}
 	m_faces[f2].f[(id_f2 + 1) % 3] = f1;
-
-	for (int i = 0; i < 3; i++) {
-		std::cout << m_faces[f1].v[i] << " " << m_faces[f2].v[i] << std::endl;
-	}
 
 	m_splitGraph[m_graphParent[f1]].push_back(f2);
 	m_splitGraph[m_graphParent[f2]].push_back(f1);
@@ -120,7 +115,6 @@ bool PolygonMap::flipEdge(int f1, int f2)
 
 void PolygonMap::insertVertex(Coord & c)
 {
-	std::cout << "insert new vertex" << std::endl;
 	m_vertices.push_back(c);
 	int currentTriangle = 0;
 	for (int t = 0; t < m_faces.size(); t++) {
@@ -139,12 +133,11 @@ void PolygonMap::insertVertex(Coord & c)
 
 	std::queue<std::pair<int, int> > toDo;
 	for (int i = 0; i < 3; i++) {
-		Face face1 = m_faces[m_faces[currentTriangle].f[i]];
-		Face face2 = m_faces[m_faces.size() - 3 + i];
-		for (int k = 0; k < 3; k++) {
-			//std::cout << face2.v[k] << " " << face1.v[k] << std::endl;
+		int index = m_faces[currentTriangle].f[i];
+		if (index < 0) {
+			continue;
 		}
-		toDo.push(std::make_pair(m_faces[currentTriangle].f[i], m_faces.size() - 1 - i));
+		toDo.push(std::make_pair(m_faces[currentTriangle].f[i], m_faces.size() - 3 + i));
 	}
 
 	while (!toDo.empty()) {
@@ -154,16 +147,19 @@ void PolygonMap::insertVertex(Coord & c)
 			continue;
 		}
 		if (flipEdge(pair.first, pair.second)) {
+			for (int i = 0; i < 3; i++) {
+				toDo.push(std::make_pair(pair.first, m_faces[pair.first].f[i]));
+				toDo.push(std::make_pair(pair.second, m_faces[pair.second].f[i]));
+			}
 
 		}
-		//std::cout << toDo.size() << std:: endl;
 	}
 }
 
 void PolygonMap::createVertices(int number_of_vertices)
 {
 	for (int i = 0; i < number_of_vertices; i++) {
-		Coord new_vertex = Coord(m_distX(RNG), m_distY(RNG));
+		Coord new_vertex = Coord(m_distX(RNG) / 2, m_distY(RNG) / 2);
 		insertVertex(new_vertex);
 	}
 }
@@ -180,11 +176,11 @@ PolygonMap::PolygonMap(int width, int height)
 	m_distX = std::uniform_int_distribution<int>(0, width);
 	m_distY = std::uniform_int_distribution<int>(0, height);
 
-	m_map = cv::Mat(width, height, CV_64FC1);
+	m_map = cv::Mat(width, height, CV_64FC3);
 
 	m_vertices.push_back(Coord(0, 0));
-	m_vertices.push_back(Coord(0, 2 * height));
-	m_vertices.push_back(Coord(2 * width, 0));
+	m_vertices.push_back(Coord(0, height));
+	m_vertices.push_back(Coord(width, 0));
 
 	int v[3] = { 0,1,2 };
 	int f[3] = { -1,-1,-1 };
@@ -210,6 +206,14 @@ void PolygonMap::drawMap()
 			Coord v = m_vertices[m_faces[i].v[k]];
 			Coord v2 = m_vertices[m_faces[i].v[(k + 1) % 3]];
 			cv::line(m_map, cv::Point(v.first, v.second), cv::Point(v2.first, v2.second), cv::Scalar(1, 0, 0));
+		}
+
+		cv::Point barycenter((m_vertices[m_faces[i].v[0]].first + m_vertices[m_faces[i].v[1]].first + m_vertices[m_faces[i].v[2]].first) / 3,
+			(m_vertices[m_faces[i].v[0]].second + m_vertices[m_faces[i].v[1]].second + m_vertices[m_faces[i].v[2]].second) / 3);
+		cv::circle(m_map, barycenter, 3, cv::Scalar(0, 0, 1));
+
+		for (int k = 0; k < 3; k++) {
+
 		}
 	}
 	cv::imshow("Polygon Map", m_map);
