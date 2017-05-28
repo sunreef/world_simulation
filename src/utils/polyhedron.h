@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <memory>
 
 struct Vertex;
 struct HalfEdge;
@@ -41,12 +42,10 @@ struct Facet {
 		HalfEdge* currentEdge = faceEdge;
 		std::string result = "[";
 		do {
-			std::cout << currentEdge->toString() << std::endl;
 			result += currentEdge->toString() + ", ";
 			currentEdge = currentEdge->next;
 		} while (currentEdge != faceEdge);
 		result += "]";
-		std::cout << "Finished facet" << std::endl;
 		return result;
 	}
 };
@@ -63,8 +62,8 @@ public:
 
 	Facet* getFacet(int index);
 
-	static Polyhedron* createTriangle(Vertex* v1, Vertex* v2, Vertex* v3);
-	void splitFacet(Vertex* v, Facet* f);
+	static std::unique_ptr<Polyhedron> createTriangle(Vertex v1, Vertex v2, Vertex v3);
+	void splitFacet(Vertex v, Facet* f);
 
 	std::string toString();
 
