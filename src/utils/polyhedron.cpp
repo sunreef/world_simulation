@@ -25,6 +25,31 @@ Facet * Polyhedron::getFacet(int index)
 	return m_facets[index];
 }
 
+HalfEdge * Polyhedron::getHalfEdge(int index)
+{
+	return m_edges[index];
+}
+
+std::vector<HalfEdge*>::iterator Polyhedron::edge_begin()
+{
+	return m_edges.begin();
+}
+
+std::vector<HalfEdge*>::iterator Polyhedron::edge_end()
+{
+	return m_edges.end();
+}
+
+std::vector<Facet*>::iterator Polyhedron::facet_begin()
+{
+	return m_facets.begin();
+}
+
+std::vector<Facet*>::iterator Polyhedron::facet_end()
+{
+	return m_facets.end();
+}
+
 std::unique_ptr<Polyhedron> Polyhedron::createTriangle(Vertex v1, Vertex  v2, Vertex  v3)
 {
 	std::unique_ptr<Polyhedron> P = std::make_unique<Polyhedron>(Polyhedron());
@@ -92,7 +117,6 @@ void Polyhedron::splitFacet(Vertex v, Facet* f) {
 		currentEdge = currentEdge->next;
 	}
 
-	int i = 0;
 	currentEdge = faceEdge;
 	for (int i = 0; i < tempFaces.size(); i++) {
 		HalfEdge* existingEdge = tempFaces[i]->edge;
@@ -123,6 +147,50 @@ void Polyhedron::splitFacet(Vertex v, Facet* f) {
 	}
 	for (HalfEdge* edge : tempEdges) {
 		m_edges.push_back(edge);
+	}
+}
+
+void Polyhedron::flipEdge(HalfEdge * edge)
+{
+	HalfEdge* oppositeEdge = edge->opposite;
+	if (oppositeEdge == nullptr) {
+		std::cout << "ERROR: trying to flip a border edge." << std::endl;
+		return;
+	}
+
+	Facet* f = edge->face;
+	Facet* f2 = oppositeEdge->face;
+
+	if (!f->isTriangle() || !f2->isTriangle()) {
+		std::cout << "ERROR: trying to flip an edge that doesn't belong to two triangles." << std::endl;
+		return;
+	}
+
+	edge->target->edge = edge->next;
+	oppositeEdge->target->edge = oppositeEdge->next;
+
+	edge->target = edge->next->target;
+	oppositeEdge->target = oppositeEdge->next->target;
+
+	edge->next->next->next = oppositeEdge->next;
+	oppositeEdge->next->next->next = edge->next;
+
+	HalfEdge* temp = edge->next->next;
+	HalfEdge* tempOpposite = oppositeEdge->next->next;
+
+	edge->next->next = oppositeEdge;
+	edge->next->face = f2;
+	oppositeEdge->next->next = edge;
+	oppositeEdge->next->face = f;
+
+	edge->next = temp;
+	oppositeEdge->next = tempOpposite;
+
+	f->edge = edge;
+	f2->edge = oppositeEdge;
+
+	if (!f->isTriangle()) {
+		std::cout << "Wrong" << std::endl;
 	}
 }
 
