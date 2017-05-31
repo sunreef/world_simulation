@@ -1,6 +1,7 @@
 #pragma once
 
 #include "polyhedron.h"
+#include "delaunay.h"
 
 #include <vector>
 #include <random>
@@ -17,12 +18,7 @@ private:
 	std::mt19937 RNG;
 	std::uniform_int_distribution<int> m_distX, m_distY;
 
-	std::unique_ptr<Polyhedron> P;
-
-	void insertVertex(Vertex v);
-
-	void createVertices(int number_of_vertices);
-	void computeDelaunay();
+	Delaunay P;
 
 	cv::Mat m_map;
 

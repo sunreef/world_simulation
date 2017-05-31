@@ -3,6 +3,7 @@
 #include <string>
 #include <iostream>
 #include <memory>
+#include <cmath>
 
 struct Vertex;
 struct HalfEdge;
@@ -161,11 +162,9 @@ public:
 	std::vector<Facet*>::iterator facet_begin();
 	std::vector<Facet*>::iterator facet_end();
 
-
-
-
 	static std::unique_ptr<Polyhedron> createTriangle(Vertex v1, Vertex v2, Vertex v3);
 
+    void addFacet(std::vector<Vertex>& vertices);
 	void splitFacet(Vertex v, Facet* f);
 	void flipEdge(HalfEdge* edge);
 

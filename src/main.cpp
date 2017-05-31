@@ -3,10 +3,9 @@
 #include "world.h"
 
 #include"utils/polygon_map.h"
-#include "utils/polyhedron.h"
+#include "utils/delaunay.h"
 
 int main(int argc, char** argv) {
-
 	PolygonMap m(800, 600);
 	m.drawMap();
 

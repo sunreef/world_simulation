@@ -52,7 +52,7 @@ std::vector<Facet*>::iterator Polyhedron::facet_end()
 
 std::unique_ptr<Polyhedron> Polyhedron::createTriangle(Vertex v1, Vertex  v2, Vertex  v3)
 {
-	std::unique_ptr<Polyhedron> P = std::make_unique<Polyhedron>(Polyhedron());
+	std::unique_ptr<Polyhedron> P = std::unique_ptr<Polyhedron>(new Polyhedron());
 
 	Vertex* u1 = new Vertex(v1);
 	Vertex* u2 = new Vertex(v2);
@@ -92,7 +92,36 @@ std::unique_ptr<Polyhedron> Polyhedron::createTriangle(Vertex v1, Vertex  v2, Ve
 	P->m_vertices.push_back(u2);
 	P->m_vertices.push_back(u3);
 
-	return P;
+	return std::move(P);
+}
+
+void Polyhedron::addFacet(std::vector<Vertex>& vertices) {
+	Facet* f = new Facet;
+	m_facets.push_back(f);
+
+	std::vector<HalfEdge*> edges(vertices.size());
+	std::vector<Vertex*> new_vertices(vertices.size());
+	for(int i = 0; i < edges.size(); i++) {
+		edges[i] = new HalfEdge;
+		new_vertices[i] = new Vertex(vertices[i]);
+	}
+
+	for(int i = 0; i < vertices.size(); i++) {
+		new_vertices[i]->edge = edges[(i+1) % vertices.size()];
+
+		edges[i]->target = new_vertices[i];
+		edges[i]->next = edges[(i+1) % vertices.size()];
+		edges[i]->face = f;
+		edges[i]->opposite = nullptr;
+	}
+    f->edge = edges[0];
+
+	for(auto edge : edges) {
+		m_edges.push_back(edge);
+	}
+	for(auto vertex : new_vertices) {
+		m_vertices.push_back(vertex);
+	}
 }
 
 void Polyhedron::splitFacet(Vertex v, Facet* f) {

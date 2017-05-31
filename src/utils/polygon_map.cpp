@@ -1,83 +1,5 @@
 #include "polygon_map.h"
 
-
-void PolygonMap::insertVertex(Vertex v)
-{
-	Facet* f;
-	bool allocated = false;
-	for (auto it = P->facet_begin(); it != P->facet_end(); it++) {
-		if ((*it)->isInside(v)) {
-			allocated = true;
-			f = *it;
-			break;
-		}
-	}
-	if (!allocated) {
-		std::cout << "Not inside a face: " << v.toString() << std::endl;
-	}
-	P->splitFacet(v, f);
-
-	std::queue<HalfEdge*> toDo;
-
-	Facet* currentFacet = f;
-	HalfEdge* currentEdge = f->edge;
-	do {
-		toDo.push(currentEdge);
-		currentEdge = currentEdge->next->opposite->next;
-	} while (currentEdge != f->edge);
-
-	while (!toDo.empty()) {
-		HalfEdge* edge = toDo.front();
-		toDo.pop();
-		if (edge->opposite == nullptr) {
-			continue;
-		}
-		Circle c = edge->face->getCircumcircle();
-
-		if (c.isInside(edge->opposite->next->target)) {
-			//std::cout << edge->next->target->toString() << " " << c.toString() << std::endl;
-			toDo.push(edge->opposite->next);
-			toDo.push(edge->opposite->next->next);
-
-			P->flipEdge(edge);
-		}
-	}
-
-	//for (auto it = P->facet_begin(); it != P->facet_end(); it++) {
-	//	Circle c = (*it)->getCircumcircle();
-	//	try {
-
-	//		if ((*it)->edge->opposite != nullptr) {
-
-	//			Vertex* v1 = (*it)->edge->opposite->next->target;
-	//			if (c.isInside(v1)) std::cout << "bad triangulation" << std::endl;
-	//		}
-	//		Vertex* v2 = (*it)->edge->next->opposite->next->target;
-	//		Vertex* v3 = (*it)->edge->next->next->opposite->next->target;
-	//	}
-	//	catch (std::exception e) {
-
-	//	}
-	//}
-}
-
-void PolygonMap::createVertices(int number_of_vertices)
-{
-	for (int i = 0; i < number_of_vertices; i++) {
-		Vertex v;
-		v.z = 0;
-		v.x = m_distX(RNG);
-		v.y = m_distY(RNG);
-
-		insertVertex(v);
-	}
-}
-
-void PolygonMap::computeDelaunay()
-{
-
-}
-
 PolygonMap::PolygonMap(int width, int height)
 {
 	RNG = std::mt19937(std::random_device()());
@@ -102,9 +24,17 @@ PolygonMap::PolygonMap(int width, int height)
 	v3.y = -1;
 	v3.z = 0;
 
-	P = Polyhedron::createTriangle(v1, v2, v3);
+    std::vector<Vertex> vertices;
+    for(int i = 0; i < 1; i++) {
+        Vertex v;
+        v.x = m_distX(RNG) / 2;
+        v.y = m_distY(RNG)/2;
+        v.z = 0;
 
-	createVertices(1000);
+        vertices.push_back(v);
+    }
+
+    P = Delaunay(vertices);
 }
 
 PolygonMap::~PolygonMap()
@@ -114,11 +44,12 @@ PolygonMap::~PolygonMap()
 void PolygonMap::drawMap()
 {
 	m_map = cv::Mat(m_map.rows, m_map.cols, CV_64FC3);
-	for (auto it = P->facet_begin(); it != P->facet_end(); it++) {
+	for (auto it = P.facet_begin(); it != P.facet_end(); it++) {
 		HalfEdge* faceEdge = (*it)->edge;
 		HalfEdge* currentEdge = faceEdge;
+        std::cout << currentEdge << std::endl;
 		Vertex* currentVertex = currentEdge->target;
-
+        std::cout << "kfjshk" << std::endl;
 		Circle c = (*it)->getCircumcircle();
 		//cv::circle(m_map, cv::Point(c.c.x, c.c.y), c.radius, cv::Scalar(0, 0, 1));
 
